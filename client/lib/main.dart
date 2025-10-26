@@ -9,20 +9,19 @@ Future main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
 
-    // ✅ Initialize Hive for Flutter
+
     await Hive.initFlutter();
 
-    // ✅ Register adapter if not already registered
     if (!Hive.isAdapterRegistered(0)) {
       Hive.registerAdapter(ProgressAdapter());
     }
 
-    // ✅ Lock orientation to landscape
+
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
     ]);
 
-    // ✅ Open Hive box
+
     progressBox = await Hive.openBox<Progress>('ProgressBox');
 
     runApp(const App());

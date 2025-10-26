@@ -122,10 +122,8 @@ class _HomePageState extends State<HomePage> {
             progressBox = Hive.box<Progress>('ProgressBox');
           }
           // Save the score
-          progressBox.put('highScore', progress);          
-          progressBox.flush();
-
-          // Force flush the box to ensure data is written to disk
+          progressBox.put('highScore', progress);
+          // Single flush call is sufficient
           progressBox.flush();
         } catch (e) {
           print('Error saving score: $e');
@@ -151,8 +149,14 @@ class _HomePageState extends State<HomePage> {
         if (mushroomCount >= highScore) {
           highScore = mushroomCount;
           date = DateTime.now();
-          final progress = Progress(highScore: highScore, date: date);
-          progressBox.put('highScore', progress);
+          try {
+            final progress = Progress(highScore: highScore, date: date);
+            if (Hive.isBoxOpen('ProgressBox')) {
+              progressBox.put('highScore', progress);
+            }
+          } catch (e) {
+            print('Error saving high score during gameplay: $e');
+          }
         }
       });
     }
