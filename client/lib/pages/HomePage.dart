@@ -38,7 +38,7 @@ class _HomePageState extends State<HomePage> {
   DateTime date = DateTime.now();
 
   var gameFont = GoogleFonts.pressStart2p(
-    textStyle: TextStyle(color: Colors.white, fontSize: 20),
+    textStyle:const TextStyle(color: Colors.white, fontSize: 20),
   );
 
   fetchData() async {
@@ -135,16 +135,15 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         mushroomX = random.nextDouble() * 2 - 1;
         mushroomY = 1 - random.nextDouble() * 0.3;
-        if(size <= 200){
+        if (size <= 200) {
           size += 10;
-        }        
-        mushroomCount++;        
+        }
+        mushroomCount++;
       });
     }
   }
 
   void jump() {
-    
     if (midJump == false && gameActive) {
       midJump = true;
 
@@ -156,7 +155,7 @@ class _HomePageState extends State<HomePage> {
         if (initHeight - height > 1.05) {
           midJump = false;
           setState(() {
-            marioY =1.05;
+            marioY = 1.05;
             timer.cancel();
           });
         } else {
@@ -170,7 +169,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   void moveRight() {
-    
     if (!gameActive) return;
     direction = "right";
     ateMushroom();
@@ -188,7 +186,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   void moveLeft() {
-    
     if (!gameActive) return;
     direction = "left";
     ateMushroom();
@@ -204,7 +201,6 @@ class _HomePageState extends State<HomePage> {
       }
     });
   }
-  
 
   @override
   void dispose() {
@@ -226,7 +222,6 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.blue,
                   child: AnimatedContainer(
                     alignment: Alignment(marioX, marioY),
-
                     duration: Duration(milliseconds: 0),
                     child: midJump
                         ? JumpingMario(direction: direction, size: size)
@@ -286,24 +281,22 @@ class _HomePageState extends State<HomePage> {
           ),
           Expanded(
             // flex: 1,
-            child: Container(              
+            child: Container(
               color: Colors.brown,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (!gameActive)                                      
-                      ElevatedButton(
-                        onPressed: startGame,
-                        
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          padding:const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
-                        ),
-                        child: Text('Start Game',
-                            style: gameFont.copyWith(fontSize: 14)),
+                  if (!gameActive)
+                    ElevatedButton(
+                      onPressed: startGame,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
                       ),
-                    
+                      child: Text('Start Game',
+                          style: gameFont.copyWith(fontSize: 14)),
+                    ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [

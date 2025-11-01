@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "416324544389",
+    "project_id": "super-mario-921e8",
+    "storage_bucket": "super-mario-921e8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:416324544389:android:3951c18003c3db0c2206ec",
+        "android_client_info": {
+          "package_name": "com.example.client"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKBnxMUI0UE4wUvboJKAP7PXj4QmDFowk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

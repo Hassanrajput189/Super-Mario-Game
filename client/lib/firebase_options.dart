@@ -66,4 +66,5 @@ class DefaultFirebaseOptions {
     projectId: 'super-mario-921e8',
     storageBucket: 'super-mario-921e8.firebasestorage.app',
   );
+
 }

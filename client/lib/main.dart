@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:client/pages/HomePage.dart';
 import 'package:firebase_core/firebase_core.dart';
-
+import 'package:flutter/services.dart';
 import "firebase_options.dart";
 
 void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     await Firebase.initializeApp(
-       options: DefaultFirebaseOptions.currentPlatform,
+      options: DefaultFirebaseOptions.currentPlatform,
     );
-    
+
     runApp(const App());
   } catch (e) {
     print('Error initializing app: $e');
