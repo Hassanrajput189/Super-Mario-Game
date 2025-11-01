@@ -1,14 +1,12 @@
-import 'package:client/boxes.dart';
 import 'package:client/widgets/Mushroom.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:client/widgets/Mario.dart';
 import 'package:client/widgets/MyButton.dart';
 import "package:client/widgets/JumpingMario.dart";
 import 'package:flutter/material.dart';
-import 'package:client/models/progress.dart';
 import 'dart:async';
 import 'dart:math';
-import 'package:hive/hive.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,38 +16,21 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  @override
-  void initState() {
-    super.initState();
-    // Load the high score when the page initializes
-    try {
-      if (Hive.isBoxOpen('ProgressBox')) {
-        final progress = progressBox.get('highScore');
-        if (progress != null) {
-          setState(() {
-            highScore = progress.highScore;
-            date = progress.date;
-          });
-        }
-      }
-    } catch (e) {
-      print('Error loading initial high score: $e');
-    }
-  }
-
+  final COLLECTION_NAME = "SuperMaio";
   double marioX = 0;
-  static double marioY = 1.05;
+  double marioY = 1.05;
   double mushroomX = 0.5;
   double mushroomY = 1.05;
   double time = 0;
-  double hight = 0;
-  double initHight = marioY;
+  double height = 0;
+  double initHeight = 1.05;
   double size = 50;
   String direction = "right";
   bool run = false;
   bool midJump = false;
   bool gameActive = false;
   Timer? gameTimer;
+  Timer? jumpTimer;
   int remainingSeconds = 60;
   Random random = Random();
   int mushroomCount = 0;
@@ -60,13 +41,47 @@ class _HomePageState extends State<HomePage> {
     textStyle: TextStyle(color: Colors.white, fontSize: 20),
   );
 
-  double getBaseHeight() {
-    return 1.05 + (size - 50) * 0.002;
+  fetchData() async {
+    try {
+      var querySnapshot =
+          await FirebaseFirestore.instance.collection(COLLECTION_NAME).get();
+
+      for (var doc in querySnapshot.docs) {
+        // Update high score from Firestore
+        var data = doc.data();
+        if (data['highscore'] != null) {
+          setState(() {
+            highScore = data['highscore'] as int;
+            // Parse the date if it's stored as a string
+            if (data['date'] != null) {
+              date = (data['date'] as Timestamp).toDate();
+            }
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
   }
 
-  void resetHight() {
+  addData(int updatedScore) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('SuperMaio')
+          .doc("NVWeZeDiyyFaCpUYYXRE")
+          .set({
+        'highscore': updatedScore,
+        'date': Timestamp.fromDate(DateTime.now()),
+      });
+      print(' Score saved successfully: $updatedScore');
+    } catch (e) {
+      print(' Error saving score: $e');
+    }
+  }
+
+  void resetHeight() {
     time = 0;
-    initHight = marioY;
+    initHeight = marioY;
   }
 
   void startGame() {
@@ -76,7 +91,9 @@ class _HomePageState extends State<HomePage> {
         remainingSeconds = 60;
         mushroomCount = 0;
         size = 50;
+        marioX = 0;
         marioY = 1.05;
+        midJump = false;
       });
 
       gameTimer = Timer.periodic(Duration(seconds: 1), (timer) {
@@ -90,16 +107,7 @@ class _HomePageState extends State<HomePage> {
       });
     }
     try {
-      if (Hive.isBoxOpen('ProgressBox')) {
-        final progress = progressBox.get('highScore');
-
-        if (progress != null) {
-          setState(() {
-            highScore = progress.highScore;
-            date = progress.date;
-          });
-        }
-      }
+      fetchData();
     } catch (e) {
       print('Error reading saved progress: $e');
     }
@@ -107,79 +115,53 @@ class _HomePageState extends State<HomePage> {
 
   void endGame() {
     gameTimer?.cancel();
+    jumpTimer?.cancel();
     setState(() {
       gameActive = false;
+      midJump = false;
 
       // Always save the score when game ends if it's higher
       if (mushroomCount >= highScore) {
         highScore = mushroomCount;
         date = DateTime.now();
-        try {
-          final progress = Progress(highScore: highScore, date: date);
-
-          // Ensure box is open
-          if (!Hive.isBoxOpen('ProgressBox')) {
-            progressBox = Hive.box<Progress>('ProgressBox');
-          }
-          // Save the score
-          progressBox.put('highScore', progress);
-          // Single flush call is sufficient
-          progressBox.flush();
-        } catch (e) {
-          print('Error saving score: $e');
-        }
+        addData(highScore);
       }
     });
   }
 
   void ateMushroom() {
     if ((marioX - mushroomX).abs() < 0.15 &&
-        (marioY - mushroomY).abs() < 0.15) {
+        (marioY - mushroomY).abs() < 0.25) {
       setState(() {
         mushroomX = random.nextDouble() * 2 - 1;
         mushroomY = 1 - random.nextDouble() * 0.3;
-        size += 10;
-
-        setState(() {
-          mushroomCount++;
-          marioY = 1.05 + (size - 50) * 0.002;
-        });
-
-
-        if (mushroomCount >= highScore) {
-          highScore = mushroomCount;
-          date = DateTime.now();
-          try {
-            final progress = Progress(highScore: highScore, date: date);
-            if (Hive.isBoxOpen('ProgressBox')) {
-              progressBox.put('highScore', progress);
-            }
-          } catch (e) {
-            print('Error saving high score during gameplay: $e');
-          }
-        }
+        if(size <= 200){
+          size += 10;
+        }        
+        mushroomCount++;        
       });
     }
   }
 
   void jump() {
+    
     if (midJump == false && gameActive) {
       midJump = true;
 
-      resetHight();
-      Timer.periodic(Duration(milliseconds: 50), (timer) {
+      resetHeight();
+      jumpTimer = Timer.periodic(Duration(milliseconds: 50), (timer) {
         time += 0.05;
-        hight = -4.9 * time * time + 5 * time;
+        height = -4.9 * time * time + 5 * time;
 
-        if (initHight - hight > getBaseHeight()) {
+        if (initHeight - height > 1.05) {
           midJump = false;
           setState(() {
-            marioY = getBaseHeight();
+            marioY =1.05;
             timer.cancel();
           });
         } else {
           setState(() {
-            marioY = initHight - hight;
+            marioY = initHeight - height;
             ateMushroom();
           });
         }
@@ -188,6 +170,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void moveRight() {
+    
     if (!gameActive) return;
     direction = "right";
     ateMushroom();
@@ -205,6 +188,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void moveLeft() {
+    
     if (!gameActive) return;
     direction = "left";
     ateMushroom();
@@ -220,10 +204,12 @@ class _HomePageState extends State<HomePage> {
       }
     });
   }
+  
 
   @override
   void dispose() {
     gameTimer?.cancel();
+    jumpTimer?.cancel();
     super.dispose();
   }
 
@@ -240,6 +226,7 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.blue,
                   child: AnimatedContainer(
                     alignment: Alignment(marioX, marioY),
+
                     duration: Duration(milliseconds: 0),
                     child: midJump
                         ? JumpingMario(direction: direction, size: size)
@@ -298,26 +285,25 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Expanded(
-            flex: 1,
-            child: Container(
+            // flex: 1,
+            child: Container(              
               color: Colors.brown,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (!gameActive)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: ElevatedButton(
+                  if (!gameActive)                                      
+                      ElevatedButton(
                         onPressed: startGame,
-                        child: Text('Start Game',
-                            style: gameFont.copyWith(fontSize: 14)),
+                        
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
-                          padding: EdgeInsets.symmetric(
+                          padding:const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 10),
                         ),
+                        child: Text('Start Game',
+                            style: gameFont.copyWith(fontSize: 14)),
                       ),
-                    ),
+                    
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [

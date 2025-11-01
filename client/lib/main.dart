@@ -1,32 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:client/pages/HomePage.dart';
-import "package:flutter/services.dart";
-import 'package:hive_flutter/hive_flutter.dart';
-import "package:client/models/progress.dart";
-import 'package:client/boxes.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-Future main() async {
+import "firebase_options.dart";
+
+void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
-
-
-    await Hive.initFlutter();
-
-    if (!Hive.isAdapterRegistered(0)) {
-      Hive.registerAdapter(ProgressAdapter());
-    }
-
-
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-    ]);
-
-
-    progressBox = await Hive.openBox<Progress>('ProgressBox');
-
+    await Firebase.initializeApp(
+       options: DefaultFirebaseOptions.currentPlatform,
+    );
+    
     runApp(const App());
   } catch (e) {
-    print('Error initializing app: $e');    
+    print('Error initializing app: $e');
   }
 }
 
